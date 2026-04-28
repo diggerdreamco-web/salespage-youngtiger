@@ -67,7 +67,23 @@ export async function onRequestPost(context) {
       body: formData.toString(),
     });
 
-    const result = await response.json();
+    const rawText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (parseErr) {
+      // ToyyibPay returned plain text error like "[KEY-DID-NOT-MATCH]"
+      let userMsg = 'Konfigurasi pembayaran tidak betul. Sila hubungi pihak kami.';
+      if (rawText.includes('KEY-DID-NOT-MATCH')) {
+        userMsg = 'TOYYIBPAY_SECRET_KEY tidak sah. Admin: Sila kemaskini environment variable.';
+      } else if (rawText.includes('CATEGORY')) {
+        userMsg = 'TOYYIBPAY_CATEGORY_CODE tidak sah. Admin: Sila kemaskini environment variable.';
+      }
+      return new Response(
+        JSON.stringify({ error: userMsg, details: rawText.substring(0, 200) }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
     if (result && result[0] && result[0].BillCode) {
       if (env.GOOGLE_SHEET_WEBHOOK) {
