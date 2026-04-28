@@ -1,12 +1,12 @@
 // =====================================================
-// GOOGLE APPS SCRIPT - Paste code ni dalam Google Apps Script
+// GOOGLE APPS SCRIPT - YoungTiger Orders Webhook
 // =====================================================
 //
 // CARA SETUP:
 //
-// 1. Buka Google Sheets baru — namakan "Kopi Anjal Orders"
+// 1. Buka Google Sheets baru — namakan "YoungTiger Orders"
 //
-// 2. Pada Row 1 (header), tulis:
+// 2. Pada Row 1 (header), tulis column ni:
 //    A1: Tarikh
 //    B1: Nama
 //    C1: Email
@@ -16,22 +16,25 @@
 //    G1: Negeri
 //    H1: Poskod
 //    I1: Pakej
-//    J1: Harga (RM)
-//    K1: Bill Code
-//    L1: Status
+//    J1: Jersey Details
+//    K1: Custom (helai)
+//    L1: Harga (RM)
+//    M1: Order Ref
+//    N1: Payment Method
+//    O1: Status
 //
-// 3. Pergi Extensions > Apps Script
+// 3. Extensions > Apps Script
 //
-// 4. Delete semua code default, paste code bawah ni
+// 4. Delete code default, paste semua code bawah ni
 //
-// 5. Klik Deploy > New Deployment
+// 5. Deploy > New Deployment
 //    - Type: Web App
 //    - Execute as: Me
 //    - Who has access: Anyone
-//    - Klik Deploy
+//    - Deploy
 //
-// 6. Copy URL yang keluar — tu yang anda letak dalam
-//    Cloudflare environment variable GOOGLE_SHEET_WEBHOOK
+// 6. Copy URL yang keluar — letak dalam Cloudflare env var
+//    GOOGLE_SHEET_WEBHOOK
 //
 // =====================================================
 
@@ -40,13 +43,13 @@ function doPost(e) {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var data = JSON.parse(e.postData.contents);
 
-    // Kalau callback dari ToyyibPay — update status je
+    // Callback dari ToyyibPay — update status je
     if (data.updateOnly && data.billCode) {
       var range = sheet.getDataRange();
       var values = range.getValues();
       for (var i = 1; i < values.length; i++) {
-        if (values[i][10] === data.billCode) { // Column K = Bill Code
-          sheet.getRange(i + 1, 12).setValue(data.status); // Column L = Status
+        if (values[i][12] === data.billCode) { // Column M = Order Ref
+          sheet.getRange(i + 1, 15).setValue(data.status); // Column O = Status
           break;
         }
       }
@@ -58,16 +61,19 @@ function doPost(e) {
     // Order baru — tambah row
     sheet.appendRow([
       new Date().toLocaleString('ms-MY', { timeZone: 'Asia/Kuala_Lumpur' }),
-      data.name,
-      data.email,
-      data.phone,
-      data.address,
-      data.city,
-      data.state,
-      data.postcode,
-      data.package,
-      data.price,
+      data.name || '',
+      data.email || '',
+      data.phone || '',
+      data.address || '',
+      data.city || '',
+      data.state || '',
+      data.postcode || '',
+      data.package || '',
+      data.jerseyDetails || '',
+      data.customCount || 0,
+      data.price || 0,
       data.billCode || '-',
+      data.paymentMethod || '',
       data.status || 'Pending'
     ]);
 
